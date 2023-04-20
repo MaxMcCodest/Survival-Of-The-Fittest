@@ -1,0 +1,69 @@
+<canvas id = "Screen", width = "500", height = "500"> </canvas>
+<script>
+    screen = document.getElementById("Screen").getContext("2d");
+    screen.fillStyle = "yellow";
+    screen.fillRect(0,0,500,500); 
+    
+    draw=(x,y,c,s) =>{
+         screen.fillStyle = c;
+         screen.fillRect(x,y,s,s);   
+    }
+    
+    entities = [];
+    entity = (x,y)=>{
+         return {"x": x, "y": y, "vx": 0, "vy": 0};   
+    }
+    
+    create = (number)=>{
+         for(let i = 0; i < number; i++){
+             randx = Math.random()*400 + 50;
+             randy = Math.random()*400 + 50;
+               entities.push(entity(randx,randy));
+         }
+    }
+    
+    move=(whatEntity, speed)=>{
+        fx = 0;
+        fy = 0;
+        for(let i = 0; i<entities.length; i++){
+            dx = entities[i].x - entities[whatEntity].x;
+            dy = entities[i].y - entities[whatEntity].y;
+            dist1 = Math.sqrt(dx * dx + dy * dy);
+            
+            /*MOVE*/
+            if(dist1 > 0){
+                F = speed * 1/dist1;
+                fx += (F * dx);
+                fy += (F * dy);
+            }
+            entities[whatEntity].vx += fx;
+            entities[whatEntity].vy += fy;
+            
+            entities[whatEntity].x += entities[whatEntity].vx;
+            entities[whatEntity].y += entities[whatEntity].vy;
+            
+            entities[whatEntity].vx *= 0.99;
+            entities[whatEntity].vy *= 0.99;
+
+        }
+    }
+    
+    reset=()=>{
+        entities = [];
+        create(10);
+    }
+    
+    create(10);
+    
+    update=()=>{
+        screen.clearRect(0,0,500,500);
+        draw(0,0,"black", 500);
+        for(let i = 0; i < entities.length; i++){
+            move(i, 0.01);
+            draw(entities[i].x, entities[i].y, "yellow", 5);
+        }
+        requestAnimationFrame(update);
+    }
+    update();
+    
+</script>
