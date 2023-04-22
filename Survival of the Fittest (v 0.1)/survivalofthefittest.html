@@ -1,0 +1,323 @@
+﻿<!DOCTYPE html>
+
+<body bgcolor="#050505"></body>
+
+
+<canvas id="Screen" width="500" height="500"> </canvas>
+<script type="text/javascript">
+    ctick = 0;
+
+    simulating = true;
+    values = [];
+
+    const screen = document.getElementById("Screen").getContext("2d");
+
+    writeText = (text, x, y, c, s) => {
+        screen.fillStyle = c;
+        screen.font = "bold " + s + "px sans-serif";
+        screen.fillText(text, x, y);
+    }
+
+    draw = (x, y, w, h, r, g, b, a) => {
+        screen.fillStyle = "rgba(" + r + ", " + g + ", " + b + ", " + a + ")";
+        screen.fillRect(x, y, w, h);
+    }
+
+    entities = [];
+    entity = (x, y, speed, strength, view, cons, virus, tick) => {
+        return { "x": x, "y": y, "vx": 0, "vy": 0, "energy": 1000, "speed": speed, "strength": strength, "view": view, "cons": cons, "virus": virus, "tick": tick};
+    }
+
+    multiplier = (text, val, change, id, description) => {
+        return { "text": text, "val": val, "id": id, "change": change, "description": description};
+    }
+
+    create = (number) => {
+        for (let i = 0; i < number; i++) {
+            randx = Math.random() * screen.canvas.width;
+            randy = Math.random() * screen.canvas.height;
+            entities.push(entity(randx, randy, Math.random() * 10, Math.random() * 10, Math.random() * 10, Math.random() * 10, Math.round(Math.random()), Math.round(Math.random() * 5)));
+        }
+    }
+
+    createChild = (me, number) => {
+        for (let i = 0; i < number; i++) {
+            randx = Math.random() * screen.canvas.width;
+            randy = Math.random() * screen.canvas.height;
+            entities.push(entity(randx, randy, entities[me].speed, entities[me].strength, entities[me].view, entities[me].cons, entities[me].virus, Math.round(Math.random() * 5)));
+        }
+    }
+
+    createSmallMutation = (me, number) => {
+        for (let i = 0; i < number; i++) {
+            randx = Math.random() * screen.canvas.width;
+            randy = Math.random() * screen.canvas.height;
+            spe = entities[me].speed + Math.random() * 2 - 1;
+            str = entities[me].strength + Math.random() * 2 - 1;
+            vie = entities[me].view + Math.random() * 2 - 1;
+            con = entities[me].cons + Math.random() * 2 - 1;
+
+            if (spe > 10) spe = 10;
+            if (spe < 0) spe = 0;
+
+            if (str > 10) str = 10;
+            if (str < 0) str = 0;
+
+            if (vie > 10) vie = 10;
+            if (vie < 0) vie = 0;
+
+            if (con > 10) con = 10;
+            if (con < 0) con = 0;
+
+            entities.push(entity(randx, randy, spe, str, vie, con, Math.round(Math.random()), Math.round(Math.random() * 5)));
+        }
+    }
+
+    function move(whatEntity, speed) {
+        finaldx = 1000;
+        finaldy = 1000;
+        finald = 1000;
+        which = 0;
+        /* Find Closest */
+        for (let i = 0; i < entities.length; i++) {
+            if (i != whatEntity) {
+                dx = entities[i].x - entities[whatEntity].x;
+                dy = entities[i].y - entities[whatEntity].y;
+                dx2 = entities[which].x - entities[whatEntity].x;
+                dy2 = entities[which].y - entities[whatEntity].y;
+                dist1 = Math.sqrt(dx * dx + dy * dy);
+                dist2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+
+                if (dist1 <= dist2) {
+                    which = i;
+                    finaldx = dx;
+                    finaldy = dy;
+                    finald = dist1;
+                }
+            }
+        }
+        /*MOVE*/
+        F = speed * 1 / finald;
+        fx = (F * finaldx);
+        fy = (F * finaldy);
+
+        entities[whatEntity].vx += fx;
+        entities[whatEntity].vy += fy;
+
+        entities[whatEntity].vx *= 0.5;
+        entities[whatEntity].vy *= 0.5;
+
+        /* Create Entity */
+
+        if (finald < 1) {
+            entities[whatEntity].x += Math.random() * 10 - 5;
+            entities[whatEntity].y += Math.random() * 10 - 5;
+        }
+        if (finald < 10) {
+            if (entities[whatEntity].virus == 0 && Math.round(Math.random() * values[1].val) == 1) {
+                entities[which].virus = 0;
+            }
+
+            entities[whatEntity].vx = 0;
+            entities[whatEntity].vy = 0;
+            entities[which].energy -= entities[whatEntity].strength * values[4].val;
+            if (entities[which].energy < 0) {
+                entities[whatEntity].energy += 750;
+                if (entities[whatEntity].energy > 1000) {
+                    /* Mutations */
+                    num = Math.round(Math.random() * values[0].val);
+                    if (num == 0) create(1);
+                    else if (num == 1) createSmallMutation(whatEntity, 1);
+                    else createChild(whatEntity, 1);
+
+                    entities[whatEntity].energy -= 500;
+                }
+            }
+        } else {
+            if (finald < entities[whatEntity].view * values[5].val * 10) {
+                entities[whatEntity].x += entities[whatEntity].vx;
+                entities[whatEntity].y += entities[whatEntity].vy;
+            }
+        }
+    }
+
+
+    function reset() {
+        entities = [];
+        create(500);
+    }
+
+    function arrayRemove(arr, value) {
+
+        return arr.filter(function (ele) {
+            return ele != value;
+        });
+    }
+
+    create(500);
+
+    function update() {
+        aveSpe = 0;
+        aveStr = 0;
+        aveVie = 0;
+        aveCon = 0;
+        aveVir = 0;
+        screen.beginPath();
+        screen.clearRect(0, 0, screen.canvas.width, screen.canvas.height);
+        draw(0, 0, screen.canvas.width, screen.canvas.height, 0, 0, 0, 1);
+
+        for (let i = 0; i < entities.length; i++) {
+
+            if ((values[8].val == 1 && ctick == entities[i].tick) || (values[8].val == 0)) {
+                move(i, entities[i].speed * values[3].val);
+                entities[i].x = Math.round(entities[i].x / 5) * 5;
+                entities[i].y = Math.round(entities[i].y / 5) * 5;
+
+                if (entities[i].virus == 1) { entities[i].energy -= ((entities[i].speed + entities[i].strength + entities[i].view + entities[i].cons) / 10 * ((entities[i].cons / 10 * -1 * values[6].val) + 1)) * 3; }
+                else {
+                    entities[i].energy -= ((entities[i].speed + entities[i].strength + entities[i].view + entities[i].cons) / 10 * ((entities[i].cons / 10 * -1) + 1)) * values[2].val;
+                }
+            }
+            
+            aveSpe += entities[i].speed;
+            aveStr += entities[i].strength;
+            aveVie += entities[i].view;
+            aveCon += entities[i].cons;
+            aveVir += entities[i].virus;
+            if (entities[i].virus == 0) {
+                draw(entities[i].x + 5, entities[i].y, 5, 5, 255, 0, 0, 0.15);
+                draw(entities[i].x - 5, entities[i].y, 5, 5, 255, 0, 0, 0.15);
+                draw(entities[i].x, entities[i].y + 5, 5, 5, 255, 0, 0, 0.15);
+                draw(entities[i].x, entities[i].y - 5, 5, 5, 255, 0, 0, 0.15);
+            }
+            draw(entities[i].x, entities[i].y, 5, 5, entities[i].speed * 25.5, entities[i].strength * 25.5, entities[i].view * 25.5, 1);
+            if (entities[i].energy < 0) entities = arrayRemove(entities, entities[i]);
+        }
+        ctick++;
+        if (ctick > 5) {
+            ctick = 0;
+        }
+
+        draw(0, 375, 150, 25, 0, 0, 0, 1);
+        writeText("Spe", 0, 390, "yellow", 12);
+        writeText("Str", 30, 390, "yellow", 12);
+        writeText("Vie", 60, 390, "yellow", 12);
+        writeText("Con", 90, 390, "yellow", 12);
+        writeText("Vir", 120, 390, "yellow", 12);
+
+        writeText("Population: " + entities.length, 255, 495, "yellow", 12);
+
+        /* Draw Max */
+        draw(0, 400, 20, 100, 255, 255, 255, 0.3);
+        draw(30, 400, 20, 100, 255, 255, 255, 0.3);
+        draw(60, 400, 20, 100, 255, 255, 255, 0.3);
+        draw(90, 400, 20, 100, 255, 255, 255, 0.3);
+        draw(120, 400, 20, 100, 255, 255, 255, 0.3);
+
+        /* Make Values */
+        aveSpe /= entities.length;
+        aveStr /= entities.length;
+        aveVie /= entities.length;
+        aveCon /= entities.length;
+        aveVir /= entities.length;
+
+        /* Draw Values */
+        draw(0, 400 + 100 - aveSpe * 10, 20, aveSpe * 10, 255, 0, 0, 0.6);
+        draw(30, 400 + 100 - aveStr * 10, 20, aveStr * 10, 255, 0, 0, 0.6);
+        draw(60, 400 + 100 - aveVie * 10, 20, aveVie * 10, 255, 0, 0, 0.6);
+        draw(90, 400 + 100 - aveCon * 10, 20, aveCon * 10, 255, 0, 0, 0.6);
+        draw(120, 400 + 100 - (aveVir * -1 + 1) * 100, 20, (aveVir * -1 + 1) * 100, 255, 0, 0, 0.6);
+
+        draw(150, 400, 100, 100, aveSpe * 25.5, aveStr * 25.5, aveVie * 25.5, 0.9);
+
+        writeText("[ESC] to edit rules", 390, 490, "white", 12);
+
+        if (simulating) requestAnimationFrame(update);
+        else requestAnimationFrame(editorUpdate);
+    }
+
+    let currentSelected = 0;
+
+    values.push(multiplier("Chance of Mutation: ", 5, 1, 0, "If entities energy is over 1000: create an entity with a 1 in [VALUE] chance of being a mutation."));
+    values.push(multiplier("Virus Spread Rate: ", 300, 5, 1, "If entity has virus, every tick have a 1 in [VALUE] chance of infecting neighbor with the virus."));
+    values.push(multiplier("Virus Strength: ", 10, 5, 2, "Every tick, takes away [VALUE] of energy from entities infected with virus"));
+    values.push(multiplier("Speed Multiplier: ", 1, 0.1, 3, "Movement speed multiplier"));
+    values.push(multiplier("Strength Multiplier: ", 1, 0.1, 4, "Strength multiplier"));
+    values.push(multiplier("View Radius Multiplier: ", 3, 0.1, 5, "View distence multiplier"));
+    values.push(multiplier("Conservation Multiplier: ", 1, 0.1, 6, "Conservation multiplier"));
+    values.push(multiplier("Highlight Infected: ", 1, 1, 7, "Highlights the entities infected with the virus. Set to 0 for better framerate"));
+    values.push(multiplier("Better Performance: ", 1, 1, 8, "Raises fps, by lowering simulation speed"));
+
+    function editorUpdate() {
+        screen.beginPath();
+        screen.clearRect(0, 0, screen.canvas.width, screen.canvas.height);
+        draw(0, 0, screen.canvas.width, screen.canvas.height, 0, 0, 0, 1);
+
+        for (let y = 0; y < values.length; y++) {
+            if (values[y].id == currentSelected) {
+                writeText("> " + values[y].text, 21, y * 25 + 25, "#f1f1a2", 10);
+                writeText("(" + Math.round(values[y].val * 10) / 10 + ")", 200, y * 25 + 25, "#f1f1a2", 10);
+            }
+            else {
+                writeText(values[y].text, 30, y * 25 + 25, "white", 10);
+                writeText("(" + Math.round(values[y].val * 10) / 10 + ")", 200, y * 25 + 25, "white", 10);
+            }
+        }
+        writeText(values[currentSelected].description, 10, 400, "#ea8f8f", 10);
+
+        writeText("| Lower Number is Higher Chance |", 300, 25, "white", 10);
+        writeText("| Lower Number is Higher Chance |", 300, 50, "white", 10);
+
+        writeText("Back [ESC]", 10, 470, "white", 10);
+        writeText("Restart Simulation [E]", 100, 470, "white", 10);
+        writeText("Reset Values [R]", 240, 470, "white", 10);
+        writeText("Change Value [D] and [A]", 355, 470, "white", 10);
+        writeText("Change Rule [W] and [S]", 10, 490, "white", 10);
+
+        if (values[7].val > 1) values[7].val = 0;
+        else if (values[7].val < 0) values[7].val = 1;
+
+        if(simulating) requestAnimationFrame(update);
+        else requestAnimationFrame(editorUpdate);
+    }
+
+    document.onkeydown = function (event) {
+        var key_press = String.fromCharCode(event.keyCode);
+        if (!simulating) {
+            if (key_press == "W") {
+                currentSelected--;
+                if (currentSelected < 0) currentSelected = values.length - 1;
+            } else if (key_press === "A") {
+                values[currentSelected].val -= values[currentSelected].change;
+            } else if (key_press === "S") {
+                currentSelected++;
+                if (currentSelected > values.length - 1) currentSelected = 0;
+            } else if (key_press === "D") {
+                values[currentSelected].val += values[currentSelected].change;
+            } else if (key_press === "E") {
+                reset();
+            } else if (key_press === "R") {
+                values[0].val = 5;
+                values[1].val = 300;
+                values[2].val = 10;
+                values[3].val = 1;
+                values[4].val = 1;
+                values[5].val = 3;
+                values[6].val = 1;
+                values[7].val = 1;
+                values[8].val = 1;
+            }
+        }
+        if (event.key == "Escape") {
+            simulating = !simulating;
+            if (simulating) requestAnimationFrame(update);
+            else requestAnimationFrame(editorUpdate);
+        }
+    }
+    
+
+    if (simulating) update();
+    else editorUpdate();
+
+</script>
+

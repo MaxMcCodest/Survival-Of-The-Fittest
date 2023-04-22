@@ -1,0 +1,13 @@
+(Version 0.1)
+
+Once file has downloaded.
+Right click on it and click on the browser you would like to run it with.
+
+You can press the Escape key to switch between Simulation and Editor.
+In the editor,
+- Press W or S to change what you are editing.
+- Press A or D to reduce or increase the value of what you are editing.
+- Read the description in red if you want to know what the selected Parameter does.
+- Press E to reset the simulation.
+- Press R to reset all the values back to default
+
